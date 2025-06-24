@@ -37,7 +37,7 @@ const determineGasStatus = (gasKeyFirebase: string, value: number): DisplayGasIn
     if (value > 20) return 'Danger'; if (value > 10) return 'Warning'; return 'Normal';
   }
   if (gasType === 'NO2') {
-    if (value > 1) return 'Danger'; if (value > 0.5) return 'Warning'; return 'Normal';
+    if (value > 4) return 'Danger'; if (value > 3) return 'Warning'; return 'Normal';
   }
   return 'Normal';
 };

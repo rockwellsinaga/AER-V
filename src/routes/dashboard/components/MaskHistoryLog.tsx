@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, Typography, Spin, Empty, Row, Col, DatePicker, Statistic, Progress, Space } from 'antd';
-import type { DatePickerProps } from 'antd';
+// import type { DatePickerProps } from 'antd'; // Tidak digunakan secara eksplisit, bisa dihapus
 import dayjs, { Dayjs } from 'dayjs';
 import { database } from '@/firebaseConfig';
 import { ref, get } from "firebase/database";
@@ -14,19 +14,17 @@ const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
 interface FirebaseMaskLogEntry {
-  status: 'Mask' | 'No Mask' | string; // Status dari Firebase
-  timestamp: string; // String "YYYY-MM-DD HH:mm:ss"
-  image_url?: string; // Opsional
+  status: 'Mask' | 'No Mask' | string;
+  timestamp: string;
+  image_url?: string;
 }
 
 interface MaskLogAggregate {
   maskOnCount: number;
   maskOffCount: number;
-  // noFaceCount: 0, // Dihilangkan sementara karena tidak ada di contoh path
   totalDetections: number;
 }
 
-// Fungsi untuk mengambil dan mengagregasi data log masker dengan struktur path baru
 const fetchAndAggregateMaskLogsNewPath = async (
   dateRange: [Dayjs, Dayjs],
 ): Promise<MaskLogAggregate> => {
@@ -53,7 +51,6 @@ const fetchAndAggregateMaskLogsNewPath = async (
 
   const processDayData = (dayDataSnapshot: any, dateForLog: Dayjs) => {
     if (!dayDataSnapshot.exists()) {
-      // console.log(`[MaskHistoryLog] No data for date: ${dateForLog.format("YYYY-MM-DD")}`);
       return;
     }
     const dayData = dayDataSnapshot.val();
@@ -62,28 +59,38 @@ const fetchAndAggregateMaskLogsNewPath = async (
     if (dayData.mask && typeof dayData.mask === 'object') {
       Object.values(dayData.mask).forEach((logEntry: any) => {
         const entry = logEntry as FirebaseMaskLogEntry;
-        // Optional: Verifikasi timestamp jika diperlukan, tapi untuk agregasi cukup statusnya
         if (entry && entry.status) {
           aggregateResult.totalDetections++;
-          if (String(entry.status).toLowerCase() === 'mask') {
+          // Status di Firebase adalah "Mask", cocokkan dengan itu
+          if (String(entry.status).trim().toLowerCase() === 'mask') {
             aggregateResult.maskOnCount++;
           }
         }
       });
     }
 
-    // Proses sub-path 'no mask'
-    if (dayData['no mask'] && typeof dayData['no mask'] === 'object') { // Perhatikan spasi di 'no mask'
-      Object.values(dayData['no mask']).forEach((logEntry: any) => {
-        const entry = logEntry as FirebaseMaskLogEntry;
-        if (entry && entry.status) {
-          aggregateResult.totalDetections++;
-          if (String(entry.status).toLowerCase() === 'no mask') {
-            aggregateResult.maskOffCount++;
-          }
+    // --- MODIFIED: Proses sub-path 'no mask' DAN 'no_mask' ---
+    const processNoMaskData = (noMaskNodeData: any) => {
+        if (noMaskNodeData && typeof noMaskNodeData === 'object') {
+            Object.values(noMaskNodeData).forEach((logEntry: any) => {
+                const entry = logEntry as FirebaseMaskLogEntry;
+                if (entry && entry.status) {
+                aggregateResult.totalDetections++;
+                // Status di Firebase adalah "No Mask", cocokkan dengan itu
+                if (String(entry.status).trim().toLowerCase() === 'no mask') {
+                    aggregateResult.maskOffCount++;
+                }
+                }
+            });
         }
-      });
-    }
+    };
+
+    // Cek path 'no mask' (dengan spasi)
+    processNoMaskData(dayData['no mask']);
+    
+    // Cek path 'no_mask' (dengan underscore)
+    processNoMaskData(dayData['no_mask']);
+    // --- END MODIFICATION ---
   };
 
   const fetchPromises = datesToFetch.map(async (targetDate) => {
@@ -203,7 +210,6 @@ export const MaskHistoryLog = () => {
               style={{ maxWidth: 200, margin: '10px auto 0' }}
             />
           </Col>
-          {/* Bagian NoFaceCount bisa ditambahkan kembali jika Anda memiliki status "No Face Detected" */}
         </Row>
       ) : (
         <Empty description={`Tidak ada data riwayat penggunaan masker untuk rentang tanggal yang dipilih.`} style={{ height: 250, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}/>
