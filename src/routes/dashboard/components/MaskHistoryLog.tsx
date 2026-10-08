@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, Typography, Spin, Empty, Row, Col, DatePicker, Statistic, Progress, Space } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Card, Col, DatePicker, Empty, Progress, Row, Space,Spin, Statistic, Typography } from 'antd';
 // import type { DatePickerProps } from 'antd'; // Tidak digunakan secara eksplisit, bisa dihapus
 import dayjs, { Dayjs } from 'dayjs';
-import { database } from '@/firebaseConfig';
-import { ref, get } from "firebase/database";
-import { Text } from "@/components";
-import { CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import type { DataSnapshot } from "firebase/database";
+import { get, ref } from "firebase/database";
+
+import { Text } from "@/components";
+import { database } from '@/firebaseConfig';
+
 dayjs.extend(customParseFormat);
 
 
@@ -17,6 +21,12 @@ interface FirebaseMaskLogEntry {
   status: 'Mask' | 'No Mask' | string;
   timestamp: string;
   image_url?: string;
+}
+
+interface FirebaseMaskLogDay {
+  mask?: Record<string, FirebaseMaskLogEntry>;
+  'no mask'?: Record<string, FirebaseMaskLogEntry>;
+  no_mask?: Record<string, FirebaseMaskLogEntry>;
 }
 
 interface MaskLogAggregate {
@@ -49,16 +59,18 @@ const fetchAndAggregateMaskLogsNewPath = async (
     currentDate = currentDate.add(1, 'day');
   }
 
-  const processDayData = (dayDataSnapshot: any, dateForLog: Dayjs) => {
+  const processDayData = (dayDataSnapshot: DataSnapshot) => {
     if (!dayDataSnapshot.exists()) {
       return;
     }
-    const dayData = dayDataSnapshot.val();
+    const dayData = dayDataSnapshot.val() as FirebaseMaskLogDay | null;
+    if (!dayData) {
+      return;
+    }
 
     // Proses sub-path 'mask'
     if (dayData.mask && typeof dayData.mask === 'object') {
-      Object.values(dayData.mask).forEach((logEntry: any) => {
-        const entry = logEntry as FirebaseMaskLogEntry;
+      Object.values(dayData.mask).forEach((entry) => {
         if (entry && entry.status) {
           aggregateResult.totalDetections++;
           // Status di Firebase adalah "Mask", cocokkan dengan itu
@@ -70,10 +82,11 @@ const fetchAndAggregateMaskLogsNewPath = async (
     }
 
     // --- MODIFIED: Proses sub-path 'no mask' DAN 'no_mask' ---
-    const processNoMaskData = (noMaskNodeData: any) => {
+    const processNoMaskData = (
+      noMaskNodeData?: Record<string, FirebaseMaskLogEntry>,
+    ) => {
         if (noMaskNodeData && typeof noMaskNodeData === 'object') {
-            Object.values(noMaskNodeData).forEach((logEntry: any) => {
-                const entry = logEntry as FirebaseMaskLogEntry;
+            Object.values(noMaskNodeData).forEach((entry) => {
                 if (entry && entry.status) {
                 aggregateResult.totalDetections++;
                 // Status di Firebase adalah "No Mask", cocokkan dengan itu
@@ -102,7 +115,7 @@ const fetchAndAggregateMaskLogsNewPath = async (
 
     try {
       const daySnapshot = await get(dayRef);
-      processDayData(daySnapshot, targetDate);
+      processDayData(daySnapshot);
     } catch (error) {
       console.error(`[MaskHistoryLog] Error fetching from path ${basePathForDay}:`, error);
     }
@@ -133,7 +146,7 @@ export const MaskHistoryLog = () => {
     try {
       const data = await fetchAndAggregateMaskLogsNewPath(selectedDateRange);
       setAggregateData(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[MaskHistoryLog] Error in loadLogData:", err);
       setError(`Gagal memuat riwayat penggunaan masker.`);
       setAggregateData(null);
@@ -146,7 +159,7 @@ export const MaskHistoryLog = () => {
     loadLogData();
   }, [loadLogData]);
 
-  const handleDateRangeChange = (dates: [Dayjs | null, Dayjs | null] | null, dateStrings: [string, string]) => {
+  const handleDateRangeChange: React.ComponentProps<typeof RangePicker>['onChange'] = (dates) => {
     if (dates && dates[0] && dates[1] && dates[0].isValid() && dates[1].isValid()) {
       setSelectedDateRange([dates[0].startOf('day'), dates[1].endOf('day')]);
     }
@@ -170,7 +183,7 @@ export const MaskHistoryLog = () => {
                 <Text>Pilih Rentang Tanggal:</Text>
                 <RangePicker 
                   value={selectedDateRange} 
-                  onChange={handleDateRangeChange as any}
+                  onChange={handleDateRangeChange}
                   disabledDate={(current) => current && current > dayjs().endOf('day')}
                 />
             </Space>

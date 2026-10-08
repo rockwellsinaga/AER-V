@@ -1,21 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, Typography, Spin, Empty, Select, Row, Col, Space, DatePicker, Checkbox } from 'antd';
-// --- MODIFIED: Cara impor CheckboxValueType ---
-import type { CheckboxValueType } from 'antd/es/checkbox/interface'; // Path yang lebih umum dan biasanya benar
-// Jika path di atas tidak bekerja, coba alternatif yang disarankan error (meskipun yang di atas lebih standar):
-// import type CheckboxValueType from 'antd/es/checkbox/Group';
-// Atau, jika CheckboxValueType diekspor langsung dari 'antd' (tergantung versi antd):
-// import type { CheckboxValueType } from 'antd';
+import React, { useCallback,useEffect, useMemo, useState } from 'react';
 
-import { Line, LineConfig } from '@ant-design/plots';
+import Line, { LineConfig } from '@ant-design/plots/es/components/line';
+import { Card, Checkbox,Col, DatePicker, Empty, Row, Space, Spin, Typography } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
-import { database } from '@/firebaseConfig';
-import { ref, get } from "firebase/database";
+import { get,ref } from "firebase/database";
+
 import { Text } from "@/components";
+import { database } from '@/firebaseConfig';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 
 interface ProcessedChartData {
@@ -102,8 +96,7 @@ export const GasHistoryChart = () => {
   const allAvailableGases = useMemo(() => ['C2H5OH', 'H2S', 'NO2'], []);
   
   const [selectedDateRange, setSelectedDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(6, 'days').startOf('day'), dayjs().endOf('day')]);
-  // Tipe CheckboxValueType digunakan di sini
-  const [selectedGases, setSelectedGases] = useState<CheckboxValueType[]>(allAvailableGases);
+  const [selectedGases, setSelectedGases] = useState<string[]>(allAvailableGases);
   
   const [chartData, setChartData] = useState<ProcessedChartData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -125,7 +118,7 @@ export const GasHistoryChart = () => {
       if (data.length === 0) {
         console.log(`[GasHistoryChart] No data processed for selected gases and date range.`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[GasHistoryChart] Error in loadChartData:", err);
       setError(`Gagal memuat riwayat gas.`);
       setChartData([]);
@@ -146,13 +139,12 @@ export const GasHistoryChart = () => {
     }
   };
 
-  // Tipe CheckboxValueType digunakan di sini
-  const handleGasSelectionChange = (checkedValues: CheckboxValueType[]) => {
-    setSelectedGases(checkedValues);
+  const handleGasSelectionChange = (checkedValues: Array<string | number>) => {
+    setSelectedGases(checkedValues.map(String));
   };
 
   const aggregatedFormattedData = useMemo(() => {
-    let dataToProcess = chartData;
+    const dataToProcess = chartData;
     if (selectedDateRange && selectedDateRange[0].diff(selectedDateRange[1], 'day') < -2 && dataToProcess.length > 1000) {
         console.log(`[GasHistoryChart] Aggregating ${dataToProcess.length} data points...`);
         const aggregated: ProcessedChartData[] = [];

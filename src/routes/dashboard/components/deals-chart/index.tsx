@@ -4,7 +4,9 @@ import { useList } from "@refinedev/core";
 import type { GetFieldsFromList } from "@refinedev/nestjs-query";
 
 import { DollarOutlined } from "@ant-design/icons";
-import { Area, type AreaConfig } from "@ant-design/plots";
+import Area, {
+  type AreaConfig,
+} from "@ant-design/plots/es/components/area";
 import { Card } from "antd";
 
 import { Text } from "@/components";
@@ -32,7 +34,6 @@ export const DashboardDealsChart = () => {
     xField: "timeText",
     yField: "value",
     seriesField: "state",
-    animation: true,
     startOnZero: false,
     smooth: true,
     legend: {

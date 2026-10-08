@@ -1,2 +1,2 @@
-// export * from "./auth"; // HAPUS BARIS INI
+export * from "./auth";
 export * from "./data";

@@ -1,10 +1,13 @@
-import { Card, Col, Row, Typography, Image, Tag, Spin, Empty } from 'antd';
 import { useEffect, useState } from 'react';
-import { database } from '@/firebaseConfig'; // Pastikan path ini benar dan Firebase diinisialisasi
-import { ref, onValue, off, get } from "firebase/database";
+
+import { Card, Col, Empty, Row, Spin, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import 'dayjs/locale/id'; // Impor locale Indonesia
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { get, onValue, ref } from "firebase/database";
+
+import { database } from '@/firebaseConfig'; // Pastikan path ini benar dan Firebase diinisialisasi
+
+import 'dayjs/locale/id'; // Impor locale Indonesia
 // import { Text } from "@/components"; // Jika Anda punya komponen Text kustom, jika tidak gunakan Typography.Text
 const { Text, Title } = Typography; // Menggunakan Text dari Ant Design jika komponen kustom tidak ada
 
@@ -15,14 +18,15 @@ dayjs.extend(customParseFormat);
 // GANTI ALAMAT INI DENGAN ALAMAT IP DAN PORT SERVER FLASK ANDA YANG BENAR
 // Jika React dan Flask berjalan di mesin yang sama untuk pengembangan: 'http://localhost:5000'
 // Jika berbeda mesin di jaringan yang sama: 'http://192.168.18.50:5000' (sesuai IP server Flask Anda)
-const FLASK_SERVER_URL = 'http://127.0.0.1:5000/'; 
+const FLASK_SERVER_URL =
+  import.meta.env.VITE_FLASK_SERVER_URL ?? 'http://127.0.0.1:5000';
 // ===================================================================================
 
 
 interface FaceDetectionData {
   current_status?: 'No one here' | 'Mask' | 'No Mask' | 'Starting detection...' | string;
   last_updated?: string | number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const MaskDetectionStatus = () => {
@@ -61,10 +65,10 @@ export const MaskDetectionStatus = () => {
       setIsLoading(false);
     });
 
-    const listener = onValue(faceDetectionRef, (snapshot) => {
+    const unsubscribe = onValue(faceDetectionRef, (snapshot) => {
       console.log("[MaskDetectionStatus] onValue() listener for 'face_detection' triggered."); // Menggunakan console.log
       processData(snapshot.val() as FaceDetectionData | null, "onValue() listener");
-      if(isLoading) setIsLoading(false); 
+      setIsLoading(false);
     }, (errorObject) => { 
       console.error("[MaskDetectionStatus] onValue() listener for 'face_detection' failed:", errorObject); // Menggunakan console.error
       setFirebaseError("Gagal mendapatkan pembaruan data dari Firebase.");
@@ -72,7 +76,7 @@ export const MaskDetectionStatus = () => {
 
     return () => {
       console.log("[MaskDetectionStatus] Component unmounting. Detaching Firebase listener for 'face_detection'."); // Menggunakan console.log
-      off(faceDetectionRef, 'value', listener);
+      unsubscribe();
     };
   }, []); // isLoading dihilangkan dari dependency array untuk mencegah re-run listener yang tidak perlu
 
