@@ -1,4 +1,5 @@
 import type { IResourceItem } from "@refinedev/core";
+
 import { DashboardOutlined } from "@ant-design/icons";
 
 export const resources: IResourceItem[] = [

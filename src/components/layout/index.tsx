@@ -1,17 +1,14 @@
 import React from "react";
 
 import { ThemedLayoutV2, ThemedTitleV2 } from "@refinedev/antd";
-import { Header } from "./header";
 
-// --- MODIFIED: Impor logo dari direktori src/assets ---
-// Pastikan path ini benar sesuai lokasi file logo Anda
-import aerVLogoSrc from "../../../public/favicon.ico"; // GANTI DENGAN PATH YANG SESUAI
+import { Header } from "./header";
 
 export const Layout = ({ children }: React.PropsWithChildren) => {
   const CustomLogo = () => (
     <img
-      src={aerVLogoSrc} // Menggunakan variabel hasil impor
-      alt="AER_V Logo"
+      src="/favicon.ico"
+      alt="AER-V logo"
       style={{
         height: "30px",
         marginRight: "10px",

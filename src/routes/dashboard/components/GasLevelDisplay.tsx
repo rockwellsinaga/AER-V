@@ -1,10 +1,12 @@
-import { Card, Col, Row, Statistic, Typography, Spin, Empty, Popover } from 'antd';
-import { useEffect, useState, useRef } from 'react';
-import { database } from '@/firebaseConfig';
-import { ref, onValue, off, get } from "firebase/database";
+import { useEffect, useRef,useState } from 'react';
+
+import Line, { LineConfig } from '@ant-design/plots/es/components/line'; // Impor Line chart
+import { Card, Col, Empty, Popover,Row, Spin, Statistic, Typography } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { Line, LineConfig } from '@ant-design/plots'; // Impor Line chart
+import { get,off, onValue, ref } from "firebase/database";
+
+import { database } from '@/firebaseConfig';
 
 dayjs.extend(customParseFormat);
 

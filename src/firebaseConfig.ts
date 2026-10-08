@@ -21,4 +21,4 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app); // Opsional, bisa dihapus jika tidak dipakai di dashboard
 const database = getDatabase(app); // Inisialisasi dan dapatkan instance database
 
-export { database, app }; // Ekspor database agar bisa diimpor di komponen lain, 'app' juga bisa diekspor jika perlu
+export { app,database }; // Ekspor database agar bisa diimpor di komponen lain, 'app' juga bisa diekspor jika perlu
